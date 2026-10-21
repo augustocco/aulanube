@@ -1,0 +1,55 @@
+@startuml despliegue
+!include estilo.iuml
+title AulaNube · Diagrama de despliegue en Oracle Cloud (sa-bogota-1)
+
+actor "Usuario\n(navegador)" as U
+
+node "OCI · VCN · subred pública\nSecurity List: solo 80/443 abiertos a internet" as VCN {
+  node "nodo1 · VM.Standard.A1.Flex\n1 OCPU · 6 GB · arm64\nUbuntu + K3s (control plane)" as N1 {
+    component "Traefik\nIngress + TLS Let's Encrypt" as TR
+    node "namespace aulanube" as NS1 {
+      artifact "web" as W1
+      artifact "gateway" as G1
+      artifact "identidad" as ID
+      artifact "cursos" as CU
+      artifact "certificados" as CE1
+      database "postgres-0\nStatefulSet · PVC 5 Gi\n4 bases" as PG
+      queue "redis\nAOF · PVC 1 Gi" as RD
+    }
+  }
+  node "nodo2 · VM.Standard.A1.Flex\n1 OCPU · 6 GB · arm64\nK3s (agente)" as N2 {
+    node "namespace aulanube " as NS2 {
+      artifact "web" as W2
+      artifact "gateway" as G2
+      artifact "certificados\n(HPA 2–4)" as CE2
+      artifact "notificaciones" as NO
+    }
+  }
+}
+
+U --> TR : HTTPS 443\naulanube.149-130-191-139.sslip.io
+TR --> W1
+TR --> W2
+W1 --> G1 : /api
+W2 --> G2 : /api
+G1 ..> ID : REST
+G1 ..> CU : REST
+G2 ..> CE2 : REST
+G2 ..> NO : REST
+CU --> RD : XADD
+CE1 --> RD : XREADGROUP
+CE2 --> RD : XREADGROUP
+NO --> RD : XREADGROUP
+ID --> PG
+CU --> PG
+CE1 --> PG
+CE2 --> PG
+NO --> PG
+
+note bottom of NS2
+  Ubicación observada con kubectl get pods -o wide (21/10/2026).
+  web y gateway se reparten entre nodos (topologySpreadConstraints);
+  el resto lo ubica el planificador según CPU y memoria disponibles.
+  NetworkPolicy: Traefik → web → gateway → servicios → datos.
+end note
+@enduml

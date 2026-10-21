@@ -1,0 +1,136 @@
+@startuml clases
+!include estilo.iuml
+title AulaNube · Diagrama de clases (modelo de dominio por servicio)
+hide empty methods
+skinparam linetype ortho
+
+package "identidad «base identidad»" {
+  class Empresa {
+    +id: int
+    +nombre: str
+    +sector: str
+    +creada_en: datetime
+  }
+  class Usuario {
+    +id: int
+    +empresa_id: int
+    +nombre: str
+    +correo: str
+    -clave_hash: str
+    +rol: {admin, estudiante}
+    --
+    +emitir_token(): JWT
+  }
+  Empresa "1" *-- "1..*" Usuario
+}
+
+package "cursos «base cursos»" {
+  class Curso {
+    +id: int
+    +empresa_id: int
+    +titulo: str
+    +descripcion: str
+    +horas: int
+  }
+  class Leccion {
+    +id: int
+    +orden: int
+    +titulo: str
+    +contenido: str
+  }
+  class Inscripcion {
+    +id: int
+    +empresa_id: int
+    +usuario_id: str
+    +usuario_nombre: str
+    +estado: {en_progreso, completado}
+    +progreso: int
+    +completado_en: datetime
+  }
+  class LeccionVista {
+    +leccion_id: int
+    +vista_en: datetime
+  }
+  class EventoSalida <<outbox>> {
+    +id: int
+    +tipo: str
+    +datos: JSON
+    +publicado_en: datetime
+  }
+  class RepositorioCursos <<repository>> {
+    +listar(empresa_id): Curso[]
+    +obtener(empresa_id, curso_id): Curso
+    +inscribir(curso, usuario): Inscripcion
+    +marcar_vista(inscripcion, leccion_id)
+    +completar(inscripcion, curso, empresa)
+  }
+  Curso "1" *-- "1..*" Leccion
+  Curso "1" o-- "0..*" Inscripcion
+  Inscripcion "1" *-- "0..*" LeccionVista
+  RepositorioCursos ..> Curso
+  RepositorioCursos ..> EventoSalida : registra\nen la misma\ntransacción
+}
+
+package "certificados «base certificados»" {
+  class Certificado {
+    +codigo: str  {unique}
+    +inscripcion_id: int  {unique}
+    +empresa_id: int
+    +usuario_id: str
+    +usuario_nombre: str
+    +curso_titulo: str
+    +horas: int
+    +emitido_en: datetime
+    +emitido_por: str
+    -pdf: bytes
+  }
+}
+
+package "notificaciones «base notificaciones»" {
+  class Notificacion {
+    +evento_id: str  {unique}
+    +empresa_id: int
+    +usuario_id: str
+    +titulo: str
+    +mensaje: str
+    +leida: bool
+  }
+}
+
+package "infraestructura compartida (código copiado en cada servicio)" {
+  class Consumidor <<subscriber>> {
+    +grupo: str
+    +nombre: str
+    +procesar_lote()
+    -reclamar_abandonados()
+    -apartar_fallido()
+  }
+  class Contexto <<value object>> {
+    +usuario_id: str
+    +empresa_id: int
+    +rol: str
+    +es_admin: bool
+  }
+}
+
+package "gateway (sin base de datos)" {
+  class Interruptor <<circuit breaker>> {
+    +estado: {cerrado, abierto, semiabierto}
+    +fallos: int
+    +permitir(): bool
+    +exito()
+    +fallo()
+  }
+  class Cubeta <<rate limiter>> {
+    +tasa: float
+    +capacidad: int
+    +consumir(clave): bool
+  }
+}
+
+Usuario ..> Inscripcion : usuario_id\n(referencia lógica,\nsin clave foránea)
+Inscripcion ..> Certificado : evento\ncurso.completado
+Certificado ..> Notificacion : evento\ncertificado.emitido
+Consumidor ..> Certificado : crea
+Consumidor ..> Notificacion : crea
+@enduml

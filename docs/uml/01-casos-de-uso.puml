@@ -1,0 +1,48 @@
+@startuml casos-de-uso
+!include estilo.iuml
+left to right direction
+title AulaNube · Diagrama de casos de uso
+
+actor "Estudiante\n(colaborador)" as Est
+actor "Administrador\nde empresa" as Adm
+actor "Verificador\nexterno" as Ver
+actor "Reloj / eventos\ndel sistema" as Sis <<sistema>>
+
+rectangle "Plataforma AulaNube" {
+  usecase "CU01 Iniciar sesión" as CU01
+  usecase "CU02 Consultar catálogo\nde su empresa" as CU02
+  usecase "CU03 Inscribirse en un curso" as CU03
+  usecase "CU04 Avanzar lecciones" as CU04
+  usecase "CU05 Completar curso" as CU05
+  usecase "CU06 Emitir certificado\n(asíncrono)" as CU06
+  usecase "CU07 Descargar certificado PDF" as CU07
+  usecase "CU08 Recibir avisos" as CU08
+  usecase "CU09 Verificar certificado\npor código" as CU09
+  usecase "CU10 Crear curso" as CU10
+  usecase "CU11 Gestionar colaboradores" as CU11
+  usecase "CU12 Consultar avance\ny certificados de la empresa" as CU12
+  usecase "CU13 Lanzar campaña masiva" as CU13
+  usecase "CU14 Monitorear arquitectura\n(servicios y cola)" as CU14
+}
+
+Est --> CU01
+Est --> CU02
+Est --> CU03
+Est --> CU04
+Est --> CU07
+Est --> CU08
+Adm --> CU01
+Adm --> CU10
+Adm --> CU11
+Adm --> CU12
+Adm --> CU13
+Adm --> CU14
+Ver --> CU09
+
+CU04 <.. CU05 : <<extend>>\n(última lección)
+CU05 ..> CU06 : <<include>>
+CU06 ..> CU08 : <<include>>
+CU13 ..> CU06 : <<include>>
+CU06 <-- Sis
+CU02 ..> CU01 : <<include>>
+@enduml

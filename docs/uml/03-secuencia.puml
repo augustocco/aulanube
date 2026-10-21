@@ -1,0 +1,67 @@
+@startuml secuencia
+!include estilo.iuml
+title AulaNube · Secuencia «Completar curso y obtener certificado»
+autonumber "<b>0."
+
+actor Estudiante as E
+participant "Web\n(nginx)" as W
+participant "API Gateway" as G
+participant "Servicio\nCursos" as C
+database "BD cursos" as BC
+queue "Redis Streams\naulanube.cursos" as R
+queue "Redis Streams\naulanube.certificados" as R2
+participant "Trabajador\nCertificados" as T
+database "BD\ncertificados" as BT
+participant "Servicio\nNotificaciones" as N
+
+E -> W : Marcar última lección
+W -> G : POST /api/cursos/cursos/{id}/lecciones/{l}/completar\nAuthorization: Bearer JWT
+G -> G : validar JWT, límite por empresa,\nestado del circuito «cursos»
+G -> C : POST /cursos/{id}/lecciones/{l}/completar\nX-Usuario-Id, X-Empresa-Id, X-Rol
+activate C
+group transacción única
+  C -> BC : registrar lección vista
+  C -> BC : inscripción = completado
+  C -> BC : INSERT eventos_salida (curso.completado)
+end
+C --> G : 200 {estado: completado}
+deactivate C
+G --> W : 200
+W --> E : «Su certificado está en camino»
+
+... el estudiante sigue navegando; lo demás ocurre en segundo plano ...
+
+C -> BC : relevo: leer eventos sin publicar\n(FOR UPDATE SKIP LOCKED)
+C -> R : XADD curso.completado
+C -> BC : marcar publicado
+
+par grupo «certificados»
+  T -> R : XREADGROUP certificados
+  R --> T : curso.completado
+  T -> BT : ¿ya existe certificado de la inscripción?
+  alt no existe
+    T -> T : generar PDF y código AN-XXXXXXXX
+    T -> BT : INSERT certificado
+    T -> R2 : XADD certificado.emitido
+  else ya existe (evento repetido)
+    T -> T : descartar
+  end
+  T -> R : XACK
+else grupo «notificaciones»
+  N -> R : XREADGROUP notificaciones
+  R --> N : curso.completado
+  N -> N : aviso «Completaste el curso»\n(idempotente por evento_id)
+  N -> R : XACK
+end
+
+N -> R2 : XREADGROUP notificaciones
+R2 --> N : certificado.emitido
+N -> N : aviso «Tu certificado está listo»\n+ correo simulado
+N -> R2 : XACK
+
+E -> W : Abrir «Certificados»
+W -> G : GET /api/certificados/certificados
+G -> T : GET /certificados
+T --> G : [{codigo, curso, emitido_en}]
+G --> W : 200
+@enduml

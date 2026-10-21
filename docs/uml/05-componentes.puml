@@ -1,0 +1,42 @@
+@startuml componentes
+!include estilo.iuml
+title AulaNube · Vista de componentes y conectores
+skinparam linetype polyline
+
+actor "Navegador" as B
+component "Web\n(nginx + SPA)" as WEB
+component "API Gateway\n—\nJWT · límite por empresa\ncircuit breaker · reintentos\ncorrelación" as GW
+
+package "Microservicios" {
+  component "Identidad" as ID
+  component "Cursos\n+ relevo outbox" as CU
+  component "Certificados\n(API + trabajadores)" as CE
+  component "Notificaciones\n(API + suscriptor)" as NO
+}
+
+database "identidad" as DID
+database "cursos" as DCU
+database "certificados" as DCE
+database "notificaciones" as DNO
+
+package "Redis Streams (un flujo por publicador)" {
+  queue "aulanube.cursos" as Q
+  queue "aulanube.certificados" as Q2
+}
+
+B --> WEB : HTTPS
+WEB --> GW : REST /api/*
+GW --> ID : REST
+GW --> CU : REST
+GW --> CE : REST
+GW --> NO : REST
+ID --> DID
+CU --> DCU
+CE --> DCE
+NO --> DNO
+CU ..> Q : publica\ncurso.completado
+Q ..> CE : grupo certificados
+Q ..> NO : grupo notificaciones
+CE ..> Q2 : publica\ncertificado.emitido
+Q2 ..> NO : grupo notificaciones
+@enduml
