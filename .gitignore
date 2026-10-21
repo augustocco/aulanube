@@ -1,0 +1,15 @@
+# Secretos: nunca al repositorio
+infra/.env
+infra/k8s/00-namespace-secretos.yaml
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.db
+.venv/
+
+# Herramientas locales
+.playwright-mcp/
+.vscode/
+.idea/
