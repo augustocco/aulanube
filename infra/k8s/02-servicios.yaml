@@ -1,0 +1,224 @@
+# Microservicios de AulaNube. Las imágenes son arm64 y se importan en cada nodo
+# (sin registro), por eso imagePullPolicy: Never.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: identidad
+  namespace: aulanube
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: identidad }
+  template:
+    metadata:
+      labels: { app: identidad, capa: servicio }
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 10001, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: identidad
+          image: aulanube/identidad:v1
+          imagePullPolicy: Never
+          env:
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: aulanube-secretos, key: DATABASE_URL_IDENTIDAD } }
+            - name: JWT_SECRETO
+              valueFrom: { secretKeyRef: { name: aulanube-secretos, key: JWT_SECRETO } }
+            - name: CLAVE_DEMO
+              valueFrom: { secretKeyRef: { name: aulanube-secretos, key: CLAVE_DEMO } }
+          ports: [{ containerPort: 8000 }]
+          securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: ["ALL"] } }
+          resources:
+            requests: { cpu: 25m, memory: 96Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+          readinessProbe: { httpGet: { path: /salud, port: 8000 }, periodSeconds: 5 }
+          livenessProbe: { httpGet: { path: /salud, port: 8000 }, initialDelaySeconds: 30, periodSeconds: 15 }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: identidad, namespace: aulanube }
+spec:
+  selector: { app: identidad }
+  ports: [{ port: 8000 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cursos
+  namespace: aulanube
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: cursos }
+  template:
+    metadata:
+      labels: { app: cursos, capa: servicio }
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 10001, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: cursos
+          image: aulanube/cursos:v1
+          imagePullPolicy: Never
+          env:
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: aulanube-secretos, key: DATABASE_URL_CURSOS } }
+            - name: REDIS_URL
+              value: redis://redis:6379/0
+          ports: [{ containerPort: 8000 }]
+          securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: ["ALL"] } }
+          resources:
+            requests: { cpu: 25m, memory: 96Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+          readinessProbe: { httpGet: { path: /salud, port: 8000 }, periodSeconds: 5 }
+          livenessProbe: { httpGet: { path: /salud, port: 8000 }, initialDelaySeconds: 30, periodSeconds: 15 }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: cursos, namespace: aulanube }
+spec:
+  selector: { app: cursos }
+  ports: [{ port: 8000 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: certificados
+  namespace: aulanube
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: certificados }
+  template:
+    metadata:
+      labels: { app: certificados, capa: servicio }
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 10001, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: certificados
+          image: aulanube/certificados:v1
+          imagePullPolicy: Never
+          env:
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: aulanube-secretos, key: DATABASE_URL_CERTIFICADOS } }
+            - name: REDIS_URL
+              value: redis://redis:6379/0
+            - name: URL_PUBLICA
+              value: https://aulanube.149-130-191-139.sslip.io
+            - name: TRABAJO_MS
+              value: "300"
+            # Cada réplica se identifica en el grupo de consumidores con el nombre de su pod.
+            - name: POD_NOMBRE
+              valueFrom: { fieldRef: { fieldPath: metadata.name } }
+          ports: [{ containerPort: 8000 }]
+          securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: ["ALL"] } }
+          resources:
+            requests: { cpu: 25m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+          readinessProbe: { httpGet: { path: /salud, port: 8000 }, periodSeconds: 5 }
+          livenessProbe: { httpGet: { path: /salud, port: 8000 }, initialDelaySeconds: 30, periodSeconds: 15 }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: certificados, namespace: aulanube }
+spec:
+  selector: { app: certificados }
+  ports: [{ port: 8000 }]
+---
+# Escalado horizontal de los trabajadores de certificados según CPU.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: certificados
+  namespace: aulanube
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: certificados }
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        # Valor absoluto: las requests son mínimas (nodos de 1 OCPU) y un porcentaje
+        # sobre ellas escalaría con el consumo en reposo.
+        target: { type: AverageValue, averageValue: 250m }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notificaciones
+  namespace: aulanube
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: notificaciones }
+  template:
+    metadata:
+      labels: { app: notificaciones, capa: servicio }
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 10001, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: notificaciones
+          image: aulanube/notificaciones:v1
+          imagePullPolicy: Never
+          env:
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: aulanube-secretos, key: DATABASE_URL_NOTIFICACIONES } }
+            - name: REDIS_URL
+              value: redis://redis:6379/0
+            - name: POD_NOMBRE
+              valueFrom: { fieldRef: { fieldPath: metadata.name } }
+          ports: [{ containerPort: 8000 }]
+          securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: ["ALL"] } }
+          resources:
+            requests: { cpu: 25m, memory: 96Mi }
+            limits: { cpu: 300m, memory: 192Mi }
+          readinessProbe: { httpGet: { path: /salud, port: 8000 }, periodSeconds: 5 }
+          livenessProbe: { httpGet: { path: /salud, port: 8000 }, initialDelaySeconds: 30, periodSeconds: 15 }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: notificaciones, namespace: aulanube }
+spec:
+  selector: { app: notificaciones }
+  ports: [{ port: 8000 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: aulanube
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: gateway }
+  template:
+    metadata:
+      labels: { app: gateway, capa: borde }
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 10001, seccompProfile: { type: RuntimeDefault } }
+      # Las dos réplicas en nodos distintos: si cae un nodo, la entrada sigue viva.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector: { matchLabels: { app: gateway } }
+      containers:
+        - name: gateway
+          image: aulanube/gateway:v1
+          imagePullPolicy: Never
+          env:
+            - name: JWT_SECRETO
+              valueFrom: { secretKeyRef: { name: aulanube-secretos, key: JWT_SECRETO } }
+          ports: [{ containerPort: 8000 }]
+          securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: ["ALL"] } }
+          resources:
+            requests: { cpu: 25m, memory: 64Mi }
+            limits: { cpu: 500m, memory: 192Mi }
+          readinessProbe: { httpGet: { path: /salud, port: 8000 }, periodSeconds: 5 }
+          livenessProbe: { httpGet: { path: /salud, port: 8000 }, initialDelaySeconds: 15, periodSeconds: 15 }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: gateway, namespace: aulanube }
+spec:
+  selector: { app: gateway }
+  ports: [{ port: 8000 }]

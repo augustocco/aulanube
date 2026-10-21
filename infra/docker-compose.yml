@@ -1,0 +1,89 @@
+# Entorno local de AulaNube: docker compose up -d --build  →  http://localhost:8080
+name: aulanube
+
+x-servicio: &servicio
+  restart: unless-stopped
+  depends_on:
+    postgres: { condition: service_healthy }
+    redis: { condition: service_healthy }
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres-local}
+      CLAVE_DB_IDENTIDAD: ${CLAVE_DB_IDENTIDAD:-identidad-local}
+      CLAVE_DB_CURSOS: ${CLAVE_DB_CURSOS:-cursos-local}
+      CLAVE_DB_CERTIFICADOS: ${CLAVE_DB_CERTIFICADOS:-certificados-local}
+      CLAVE_DB_NOTIFICACIONES: ${CLAVE_DB_NOTIFICACIONES:-notificaciones-local}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./postgres/crear-bases.sh:/docker-entrypoint-initdb.d/crear-bases.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      retries: 20
+
+  identidad:
+    <<: *servicio
+    build: ../servicios/identidad
+    environment:
+      DATABASE_URL: postgresql+psycopg://identidad:${CLAVE_DB_IDENTIDAD:-identidad-local}@postgres:5432/identidad
+      JWT_SECRETO: ${JWT_SECRETO:-cambie-este-secreto-local}
+      CLAVE_DEMO: ${CLAVE_DEMO:-AulaNube-2026}
+
+  cursos:
+    <<: *servicio
+    build: ../servicios/cursos
+    environment:
+      DATABASE_URL: postgresql+psycopg://cursos:${CLAVE_DB_CURSOS:-cursos-local}@postgres:5432/cursos
+      REDIS_URL: redis://redis:6379/0
+
+  certificados:
+    <<: *servicio
+    build: ../servicios/certificados
+    # Dos trabajadores que compiten por la misma cola (Competing Consumers).
+    deploy:
+      replicas: 2
+    environment:
+      DATABASE_URL: postgresql+psycopg://certificados:${CLAVE_DB_CERTIFICADOS:-certificados-local}@postgres:5432/certificados
+      REDIS_URL: redis://redis:6379/0
+      URL_PUBLICA: http://localhost:8080
+      TRABAJO_MS: "300"
+
+  notificaciones:
+    <<: *servicio
+    build: ../servicios/notificaciones
+    environment:
+      DATABASE_URL: postgresql+psycopg://notificaciones:${CLAVE_DB_NOTIFICACIONES:-notificaciones-local}@postgres:5432/notificaciones
+      REDIS_URL: redis://redis:6379/0
+
+  gateway:
+    build: ../servicios/gateway
+    restart: unless-stopped
+    environment:
+      JWT_SECRETO: ${JWT_SECRETO:-cambie-este-secreto-local}
+    depends_on: [identidad, cursos, certificados, notificaciones]
+
+  web:
+    build: ../web
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on: [gateway]
+
+volumes:
+  postgres:
+  redis:

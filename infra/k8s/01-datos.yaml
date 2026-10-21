@@ -1,0 +1,133 @@
+# PostgreSQL (una base por servicio) y Redis (flujo de eventos), con volúmenes persistentes.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-inicio
+  namespace: aulanube
+data:
+  crear-bases.sh: |
+    #!/bin/sh
+    set -eu
+    for servicio in identidad cursos certificados notificaciones; do
+      variable="CLAVE_DB_$(echo "$servicio" | tr '[:lower:]' '[:upper:]')"
+      eval clave="\${$variable}"
+      psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname postgres <<SQL
+    CREATE ROLE $servicio LOGIN PASSWORD '$clave';
+    CREATE DATABASE $servicio OWNER $servicio;
+    REVOKE CONNECT ON DATABASE $servicio FROM PUBLIC;
+    GRANT CONNECT ON DATABASE $servicio TO $servicio;
+    SQL
+    done
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: aulanube
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels: { app: postgres }
+  template:
+    metadata:
+      labels: { app: postgres, capa: datos }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          envFrom:
+            - secretRef: { name: aulanube-secretos }
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - containerPort: 5432
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 384Mi }
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "postgres"] }
+            periodSeconds: 5
+          volumeMounts:
+            - { name: datos, mountPath: /var/lib/postgresql/data }
+            - { name: inicio, mountPath: /docker-entrypoint-initdb.d }
+      volumes:
+        - name: inicio
+          configMap: { name: postgres-inicio }
+  volumeClaimTemplates:
+    - metadata:
+        name: datos
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: local-path
+        resources:
+          requests: { storage: 5Gi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: aulanube
+spec:
+  selector: { app: postgres }
+  ports:
+    - port: 5432
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-datos
+  namespace: aulanube
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: local-path
+  resources:
+    requests: { storage: 1Gi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: aulanube
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: { app: redis }
+  template:
+    metadata:
+      labels: { app: redis, capa: datos }
+    spec:
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+      containers:
+        - name: redis
+          image: redis:7.4-alpine
+          # appendonly: los eventos sin procesar sobreviven a un reinicio de Redis.
+          args: ["redis-server", "--appendonly", "yes", "--maxmemory", "200mb"]
+          ports:
+            - containerPort: 6379
+          resources:
+            requests: { cpu: 25m, memory: 64Mi }
+            limits: { cpu: 250m, memory: 256Mi }
+          readinessProbe:
+            exec: { command: ["redis-cli", "ping"] }
+            periodSeconds: 5
+          volumeMounts:
+            - { name: datos, mountPath: /data }
+      volumes:
+        - name: datos
+          persistentVolumeClaim: { claimName: redis-datos }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: aulanube
+spec:
+  selector: { app: redis }
+  ports:
+    - port: 6379

@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: aulanube
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: web }
+  template:
+    metadata:
+      labels: { app: web, capa: borde }
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 101, seccompProfile: { type: RuntimeDefault } }
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector: { matchLabels: { app: web } }
+      containers:
+        - name: web
+          image: aulanube/web:v1
+          imagePullPolicy: Never
+          ports: [{ containerPort: 8080 }]
+          securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: ["ALL"] } }
+          resources:
+            requests: { cpu: 10m, memory: 16Mi }
+            limits: { cpu: 200m, memory: 64Mi }
+          readinessProbe: { httpGet: { path: /, port: 8080 }, periodSeconds: 5 }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: web, namespace: aulanube }
+spec:
+  selector: { app: web }
+  ports: [{ port: 80, targetPort: 8080 }]
+---
+# Traefik (incluido en K3s) termina TLS con un certificado de Let's Encrypt.
+# El nombre usa sslip.io, que resuelve a la IP pública del nodo sin configurar DNS.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata: { name: redirigir-https, namespace: aulanube }
+spec:
+  redirectScheme: { scheme: https, permanent: true }
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aulanube
+  namespace: aulanube
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
+spec:
+  rules:
+    - host: aulanube.149-130-191-139.sslip.io
+      http:
+        paths:
+          - { path: /, pathType: Prefix, backend: { service: { name: web, port: { number: 80 } } } }
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aulanube-http
+  namespace: aulanube
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    traefik.ingress.kubernetes.io/router.middlewares: aulanube-redirigir-https@kubernetescrd
+spec:
+  rules:
+    - host: aulanube.149-130-191-139.sslip.io
+      http:
+        paths:
+          - { path: /, pathType: Prefix, backend: { service: { name: web, port: { number: 80 } } } }

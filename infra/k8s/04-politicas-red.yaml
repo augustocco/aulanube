@@ -1,0 +1,46 @@
+# Segmentación de red: solo el gateway llega a los servicios y solo los
+# servicios llegan a los datos. Así las cabeceras de identidad que pone el
+# gateway no se pueden falsificar desde otro pod.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: servicios-solo-desde-gateway, namespace: aulanube }
+spec:
+  podSelector: { matchLabels: { capa: servicio } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: gateway } }
+      ports: [{ port: 8000 }]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: datos-solo-desde-servicios, namespace: aulanube }
+spec:
+  podSelector: { matchLabels: { capa: datos } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { capa: servicio } }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: gateway-solo-desde-web, namespace: aulanube }
+spec:
+  podSelector: { matchLabels: { app: gateway } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: web } }
+      ports: [{ port: 8000 }]
+---
+# La web recibe tráfico de Traefik, que vive en kube-system.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: web-desde-ingress, namespace: aulanube }
+spec:
+  podSelector: { matchLabels: { app: web } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } }
+      ports: [{ port: 8080 }]
