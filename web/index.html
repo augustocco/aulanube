@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AulaNube · CapacitaPro</title>
+  <meta name="description" content="Plataforma de capacitación corporativa multiempresa de CapacitaPro S.A.S.">
+  <link rel="icon" href="icono.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <header class="barra" id="barra" hidden>
+    <a class="marca" href="#/cursos"><img src="icono.svg" alt="" width="28" height="28"><span>AulaNube</span></a>
+    <nav class="menu" id="menu"></nav>
+    <div class="cuenta">
+      <span class="empresa" id="empresa"></span>
+      <button class="enlace" id="salir" type="button">Salir</button>
+    </div>
+  </header>
+  <main id="vista" class="vista" tabindex="-1"></main>
+  <div class="aviso-flotante" id="aviso" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
