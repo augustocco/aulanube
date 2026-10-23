@@ -2,7 +2,7 @@
 
 Prototipo de la actividad **«Orquestando Códigos: La Sinfonía de los Sistemas»** (Arquitectura de Software, Unidad 1, Tecnológica del Oriente).
 
-AulaNube es la plataforma de capacitación corporativa multiempresa que propone el equipo para **CapacitaPro S.A.S.**, una empresa ficticia que vende cursos virtuales obligatorios (SG-SST, trabajo en alturas, protección de datos) a otras empresas. La arquitectura combina **microservicios**, un **API Gateway** y **eventos asíncronos** sobre Redis Streams, y se despliega en **Oracle Cloud Infrastructure** sobre un clúster K3s de nodos Ampere A1 (capa Always Free).
+AulaNube es la plataforma de capacitación corporativa multiempresa propuesta para **CapacitaPro S.A.S.**, una empresa ficticia que vende cursos virtuales obligatorios (SG-SST, trabajo en alturas, protección de datos) a otras empresas. La arquitectura combina **microservicios**, un **API Gateway** y **eventos asíncronos** sobre Redis Streams, y se despliega en **Oracle Cloud Infrastructure** sobre un clúster K3s de nodos Ampere A1 (capa Always Free).
 
 - Aplicación en la nube: **https://aulanube.149-130-191-139.sslip.io**
 - Caso de estudio y requisitos: [docs/caso-de-estudio.md](docs/caso-de-estudio.md), [docs/requisitos.md](docs/requisitos.md)

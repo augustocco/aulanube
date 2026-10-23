@@ -1,6 +1,6 @@
 # Caso de estudio: CapacitaPro S.A.S.
 
-> Empresa ficticia creada por el equipo para la actividad. Los nombres de clientes, personas y cifras son inventados.
+> Empresa ficticia creada para la actividad. Los nombres de clientes, personas y cifras son inventados.
 
 ## La empresa
 
@@ -31,4 +31,4 @@ Cada cliente nuevo recibe **su propia instalación de WordPress con un plugin de
 
 ## Alcance del prototipo
 
-El equipo de arquitectura propone **AulaNube** y construye un prototipo con el flujo central: ingreso, catálogo por empresa, avance de lecciones, finalización, emisión asíncrona del certificado, avisos, verificación pública, gestión básica de la empresa y un panel para observar la arquitectura. Quedan fuera del prototipo los pagos, la facturación, el contenido multimedia y la integración con el correo real.
+Se propone **AulaNube** y se construye un prototipo con el flujo central: ingreso, catálogo por empresa, avance de lecciones, finalización, emisión asíncrona del certificado, avisos, verificación pública, gestión básica de la empresa y un panel para observar la arquitectura. Quedan fuera del prototipo los pagos, la facturación, el contenido multimedia y la integración con el correo real.

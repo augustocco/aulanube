@@ -5,7 +5,7 @@
 | Técnica | Cómo se aplicó |
 |---|---|
 | Análisis documental | Lectura del caso de estudio y de los reclamos e incidentes descritos (cierre de campaña de marzo, certificados no generados). |
-| Entrevista simulada con los interesados | El equipo representó tres papeles: gerencia de CapacitaPro, administradora de un cliente y colaborador que toma un curso. De cada uno salieron necesidades y prioridades. |
+| Entrevista simulada con los interesados | Se simularon tres papeles: gerencia de CapacitaPro, administradora de un cliente y colaborador que toma un curso. De cada uno salieron necesidades y prioridades. |
 | Historias de usuario | Cada requisito funcional se redactó como «Como… quiero… para…» y se le asignó prioridad MoSCoW. |
 | Escenarios de atributos de calidad | Los requisitos no funcionales se expresaron como escenarios medibles (fuente, estímulo, entorno, respuesta y medida), según Bass et al. (2012). |
 | Priorización MoSCoW | Must (debe), Should (debería), Could (podría). Lo marcado como «Debe» entra al prototipo. |
