@@ -1,0 +1,51 @@
+TÍTULO (98 caracteres; YouTube admite hasta 100)
+AulaNube: arquitectura de microservicios en la nube con UML y patrones | Arquitectura de Software U1
+
+TÍTULO ALTERNATIVO MÁS CORTO
+AulaNube: microservicios en Oracle Cloud | Arquitectura de Software, Unidad 1
+
+VISIBILIDAD: No listado
+
+
+DESCRIPCIÓN
+Presentación de la actividad «Orquestando Códigos: La Sinfonía de los Sistemas» del curso Arquitectura de Software (Unidad 1), Ingeniería de Software, Tecnológica del Oriente.
+
+AulaNube es la plataforma de capacitación corporativa multiempresa que propongo para CapacitaPro S.A.S., una empresa ficticia que atiende a 38 empresas cliente con una instalación de WordPress por cliente. El video recorre el análisis de requisitos con escenarios de calidad medibles, la arquitectura de microservicios con API Gateway y eventos asíncronos, los diagramas UML (casos de uso, clases, secuencia y despliegue), los patrones de diseño para la nube y una demostración del prototipo desplegado en Oracle Cloud Infrastructure.
+
+En la demostración:
+• Un estudiante completa un curso y recibe su certificado verificable sin esperar.
+• Una campaña de 200 participantes se absorbe en la cola (Queue-Based Load Leveling y Competing Consumers).
+• Se apaga el servicio de certificados: el circuit breaker se abre y el resto de la plataforma sigue funcionando.
+• Al recuperar el servicio, el certificado pendiente se emite solo (Transactional Outbox).
+
+Capítulos
+0:00 Presentación
+0:40 El problema de CapacitaPro
+1:55 Requisitos como escenarios de calidad
+3:10 Arquitectura de microservicios
+4:25 Cohesión, acoplamiento y ocultamiento de información
+5:15 Diagramas de casos de uso y de clases
+6:25 Diagrama de secuencia
+7:25 Despliegue en Oracle Cloud
+8:20 Patrones de diseño para la nube
+9:50 Demostración en vivo
+13:20 Resultados medidos
+14:10 Conclusiones
+
+Enlaces
+Repositorio con el código, los diagramas y el informe: https://github.com/augustocco/aulanube
+Prototipo en la nube: https://aulanube.149-130-191-139.sslip.io
+
+Tecnologías: Python, FastAPI, PostgreSQL, Redis Streams, Docker, Kubernetes (K3s), Traefik y Oracle Cloud Infrastructure (capa Always Free).
+
+Autor: Augusto César Cañola Ortiz
+Docente: [Nombre del docente]
+
+#ArquitecturaDeSoftware #Microservicios #UML #PatronesDeDiseño #OracleCloud #Kubernetes
+
+
+ANTES DE PUBLICAR
+• Ajustar los minutos de los capítulos a la grabación final. YouTube solo crea capítulos si el primero es 0:00, hay al menos tres y cada uno dura 10 segundos o más.
+• Completar el nombre del docente.
+• Subir la miniatura en «Miniatura» → «Subir archivo» (Miniatura-YouTube-AulaNube.png, 1280 × 720).
+• Copiar el enlace del video en la portada del informe y en el guion.
