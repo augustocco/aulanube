@@ -25,12 +25,11 @@ Prototipo en la nube: https://aulanube.149-130-191-139.sslip.io
 Tecnologías: Python, FastAPI, PostgreSQL, Redis Streams, Docker, Kubernetes (K3s), Traefik y Oracle Cloud Infrastructure (capa Always Free).
 
 Autor: Augusto César Cañola Ortiz
-Docente: [Nombre del docente]
+Docente: Ing. Leydi Johana Polo Amador
 
 #ArquitecturaDeSoftware #Microservicios #UML #PatronesDeDiseño #OracleCloud #Kubernetes
 
 
 ANTES DE PUBLICAR
-• Completar el nombre del docente.
 • Subir la miniatura en «Miniatura» → «Subir archivo» (Miniatura-YouTube-AulaNube.png, 1280 × 720).
 • Cambiar la visibilidad del video de «Privado» a «No listado».
