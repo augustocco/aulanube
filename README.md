@@ -8,6 +8,7 @@ AulaNube es la plataforma de capacitación corporativa multiempresa propuesta pa
 - Caso de estudio y requisitos: [docs/caso-de-estudio.md](docs/caso-de-estudio.md), [docs/requisitos.md](docs/requisitos.md)
 - Diagramas UML (fuente PlantUML e imágenes): [docs/uml/](docs/uml/)
 - Patrones de diseño y su justificación: [docs/patrones.md](docs/patrones.md)
+- Video de la presentación: https://youtu.be/MIRqI7KDZq0
 - Informe técnico y presentación: [docs/informe/](docs/informe/), [docs/presentacion/](docs/presentacion/)
 
 ## Arquitectura
