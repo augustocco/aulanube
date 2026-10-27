@@ -18,20 +18,6 @@ En la demostración:
 • Se apaga el servicio de certificados: el circuit breaker se abre y el resto de la plataforma sigue funcionando.
 • Al recuperar el servicio, el certificado pendiente se emite solo (Transactional Outbox).
 
-Capítulos
-0:00 Presentación
-0:40 El problema de CapacitaPro
-1:55 Requisitos como escenarios de calidad
-3:10 Arquitectura de microservicios
-4:25 Cohesión, acoplamiento y ocultamiento de información
-5:15 Diagramas de casos de uso y de clases
-6:25 Diagrama de secuencia
-7:25 Despliegue en Oracle Cloud
-8:20 Patrones de diseño para la nube
-9:50 Demostración en vivo
-13:20 Resultados medidos
-14:10 Conclusiones
-
 Enlaces
 Repositorio con el código, los diagramas y el informe: https://github.com/augustocco/aulanube
 Prototipo en la nube: https://aulanube.149-130-191-139.sslip.io
@@ -45,7 +31,6 @@ Docente: [Nombre del docente]
 
 
 ANTES DE PUBLICAR
-• Ajustar los minutos de los capítulos a la grabación final. YouTube solo crea capítulos si el primero es 0:00, hay al menos tres y cada uno dura 10 segundos o más.
 • Completar el nombre del docente.
 • Subir la miniatura en «Miniatura» → «Subir archivo» (Miniatura-YouTube-AulaNube.png, 1280 × 720).
-• Copiar el enlace del video en la portada del informe y en el guion.
+• Cambiar la visibilidad del video de «Privado» a «No listado».
