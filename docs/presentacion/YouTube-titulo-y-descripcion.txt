@@ -1,4 +1,4 @@
-TÍTULO (98 caracteres; YouTube admite hasta 100)
+TÍTULO (100 caracteres, justo el máximo de YouTube)
 AulaNube: arquitectura de microservicios en la nube con UML y patrones | Arquitectura de Software U1
 
 TÍTULO ALTERNATIVO MÁS CORTO
